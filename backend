@@ -1,0 +1,33 @@
+`// Task Schema
+const taskSchema = new mongoose.Schema({
+title: String,
+data: Object, // e.g., { text: "Label this sentence." }
+assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+status: { type: String, enum: ['pending', 'completed'], default: 'pending' },
+response: String,
+});
+
+const Task = mongoose.model('Task', taskSchema);
+
+// Create Task (Admin only)
+app.post('/tasks', authMiddleware, async (req, res) => {
+if (req.user.role !== 'admin') return res.status(403).json({ error: 'Access denied' });
+
+const { title, data, assignedTo } = req.body;
+const task = new Task({ title, data, assignedTo });
+await task.save();
+res.status(201).json({ message: 'Task created successfully' });
+});
+
+// Get Tasks for Annotator
+app.get('/tasks', authMiddleware, async (req, res) => {
+const tasks = await Task.find({ assignedTo: req.user.id });
+res.json(tasks);
+});
+
+// Submit Task Response
+app.post('/tasks/:id/submit', authMiddleware, async (req, res) => {
+const { response } = req.body;
+const task = await Task.findOneAndUpdate(
+{ _id: req.params.id, assignedTo: req
+`
